@@ -25,6 +25,50 @@ WEIGHT_TABLE = np.array([
     [100, -20, 10,  5,  5, 10, -20, 100],
 ], dtype=float)
 
+def get_dynamic_weights(board, turn):
+    weights = WEIGHT_TABLE.copy()
+
+    # Top-left corner
+    if board[0][0] == turn:
+        weights[0][1] = 5
+        weights[1][0] = 5
+        weights[1][1] = 5
+    elif board[0][0] == -turn:
+        weights[0][1] = -50
+        weights[1][0] = -50
+        weights[1][1] = -50
+
+    # Top-right corner
+    if board[0][7] == turn:
+        weights[0][6] = 5
+        weights[1][7] = 5
+        weights[1][6] = 5
+    elif board[0][7] == -turn:
+        weights[0][6] = -50
+        weights[1][7] = -50
+        weights[1][6] = -50
+
+    # Bottom-left corner
+    if board[7][0] == turn:
+        weights[7][1] = 5
+        weights[6][0] = 5
+        weights[6][1] = 5
+    elif board[7][0] == -turn:
+        weights[7][1] = -50
+        weights[6][0] = -50
+        weights[6][1] = -50
+
+    # Bottom-right corner
+    if board[7][7] == turn:
+        weights[7][6] = 5
+        weights[6][7] = 5
+        weights[6][6] = 5
+    elif board[7][7] == -turn:
+        weights[7][6] = -50
+        weights[6][7] = -50
+        weights[6][6] = -50
+
+    return weights
 
 # HELPER: get all valid moves for a player on a given board (added)
 # Returns a list of (row, col, flips_count)
@@ -57,11 +101,11 @@ def apply_move(board, x, y, turn):
 #   3. Find OPPONENT's best response on that new board (same scoring)
 #   4. Final score = my_score - opponent's_best_score
 
-def score_move(i, j, my_flips, board_after_my_move, my_turn):
+def score_move(i, j, my_flips, board_after_my_move, my_turn, weights):
     opponent = -my_turn
 
     # My move score: positional value of the cell + bonus for each piece flipped
-    my_score = WEIGHT_TABLE[i][j] + my_flips * 2
+    my_score = weights[i][j] + my_flips * 2
 
     # Simulate what the opponent would do on the new board
     opp_moves = get_valid_moves(board_after_my_move, opponent)
@@ -72,7 +116,7 @@ def score_move(i, j, my_flips, board_after_my_move, my_turn):
     else:
         # Find opponent's best possible score (greedy + positional weight)
         best_opp_score = max(
-            WEIGHT_TABLE[oi][oj] + opp_flips * 2
+            weights[oi][oj] + opp_flips * 2
             for (oi, oj, opp_flips) in opp_moves
         )
 
@@ -143,10 +187,11 @@ def main():
         best_score = float('-inf')
         best_x, best_y = fallback_x, fallback_y  # start with smarty fallback
 
+        weights = get_dynamic_weights(board, turn)
         moves = get_valid_moves(board, turn)
         for (i, j, flips) in moves:
             new_board = apply_move(board, i, j, turn)
-            score = score_move(i, j, flips, new_board, turn)
+            score = score_move(i, j, flips, new_board, turn, weights)
             if score > best_score:
                 best_score = score
                 best_x, best_y = i, j
