@@ -84,16 +84,18 @@ def score_move(i, j, my_flips, board_after_my_move, my_turn, weights):
     opponent = -my_turn
     my_score = weights[i][j] + my_flips * 2
     opp_moves = get_valid_moves(board_after_my_move, opponent)
+    mobility_penalty = len(opp_moves) * 3
 
     if not opp_moves:
-        best_opp_score = -50
+        best_opp_score = -100
     else:
+        opp_weights = get_dynamic_weights(board_after_my_move, opponent)
         best_opp_score = max(
-            weights[oi][oj] + opp_flips * 2
+            opp_weights[oi][oj] + opp_flips * 0.5
             for (oi, oj, opp_flips) in opp_moves
         )
 
-    return my_score - best_opp_score
+    return my_score - best_opp_score - mobility_penalty
 
 def main():
     game_socket = socket.socket()
